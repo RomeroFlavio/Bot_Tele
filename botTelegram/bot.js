@@ -6,9 +6,9 @@ import { obtenerEscaladas, actualizarEscalada, } from './escaladas.js'
 import { handlePhotoDownload } from './funcionFoto.js'
 
 // Token de bot de Telegram server
-const token = '7899031509:AAFWzEHmOl1H_QotpoXlaWLtsJxsO1svOQw';
+//const token = '7899031509:AAFWzEHmOl1H_QotpoXlaWLtsJxsO1svOQw';
 // Token de bot de Telegram laboratorio
-//const token = '7620932739:AAHv9N1L4fEKcGtSW3PaTIm-lZnDiJ9weQM';
+const token = '7620932739:AAHv9N1L4fEKcGtSW3PaTIm-lZnDiJ9weQM';
 // Crear bot de Telegram
 export const bot = new Telegraf(token);
 // Store para manejar chats
@@ -111,7 +111,6 @@ bot.on(['message', 'callback_query', 'photo'], async (ctx) => {
         // Manejar mensaje
         if (ctx.message && ctx.message.text) {
             const texto = ctx.message.text.toLowerCase();
-
             // Código para manejar message
             if (texto === 'nuevo' || texto === 'estado') {
                 store.actualizarChat(chatId, 'estado', texto);
@@ -163,8 +162,8 @@ bot.on(['message', 'callback_query', 'photo'], async (ctx) => {
                     },
                 });
             } else if (action === 'responder') {
-                arbolCQ(ctx, action, callbackData);
-            } else if (callbackData === 'finalizar chat') {
+                arbolCQ(ctx, action, callbackData); //por aca entra el chat
+            } else if (action === 'finalizarchat') {
                 store.actualizarChat(chatId, 'chat', '0');
                 ctx.reply('El chat fue finalizado', {
                     reply_markup: {

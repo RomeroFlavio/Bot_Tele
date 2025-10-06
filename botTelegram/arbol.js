@@ -3,7 +3,10 @@ import { procesarCliente } from './schemas.js'
 import { buscarClienteEnColecciones } from './estado.js'
 import { obtenerDatosDeNodos, obtenerDatosDePlaza } from './obtenerIP.js'
 import { procesarCodigoBarra} from './barcodeReader.js'
-import { handlePhotoDownload } from './funcionFoto.js';
+import { handlePhotoDownload } from './funcionFoto.js'
+import { sendMessageToWeb } from './chat.js'
+
+
 
 export async function arbolMessage(ctx, estado, opcion) {
     const chatId = ctx.chat.id;
@@ -13,13 +16,13 @@ export async function arbolMessage(ctx, estado, opcion) {
     switch (estado) {
         case 'test':
             ctx.reply('pasa foto che');
-            store.actualizarEstado(chatId, 'cargarFoto');
+                store.actualizarEstado(chatId, 'cargarFoto');
             break
         case 'chat':
             if (store.chats[chatId].chat === '1') {
-                handlePhotoDownload(ctx);
+                sendMessageToWeb(ctx, tecnico, chatId, store.chats[chatId].chatOP);
             } else if (store.chats[chatId].chat === '0') {
-                ctx.reply('El chat fue finalizado');
+                ctx.reply('El chat fue finalizado amiguitooo');
             } else { }
             break
         case 'nuevo'://1
@@ -276,7 +279,7 @@ export async function arbolCQ(ctx, estado, opcion) {
             arbolCQ(ctx, 'lector');
             break
         case 'lector':
-            ver('Impreso en consola')
+            //ver('Impreso en consola')
             /*ver(store.chats[chatId].fotos)
             const filePath = './img/AgACAgEAAxkBAAICV2dpctxy1kJ2U6FB6sWbs9JkSp7WAAKErjEbZ_Y5Rju8ztpK0UL7AQADAgADeQADNgQ.jpg'
             procesarCodigoBarra(filePath);

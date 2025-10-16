@@ -143,6 +143,7 @@ bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => 
             const parts = callbackData.split(':');
             const action = parts[0]; // 'responder'
             const agente = parts[1]; // El chatId
+            ver(action)
             store.actualizarChat(chatId, 'chatOP', agente);
             // Código para manejar callback_query
             if (callbackData === 'nuevo' || callbackData === 'estado' || callbackData === 'test') {
@@ -176,6 +177,7 @@ bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => 
                         ],
                     },
                 });
+                store.actualizarEstado(chatId, '');
             } else {
                 arbolCQ(ctx, store.chats[chatId].estado, callbackData);
             }

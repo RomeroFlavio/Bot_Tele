@@ -3,7 +3,7 @@ import { Telegraf } from 'telegraf';
 import { arbolMessage, arbolCQ, } from './arbol.js'
 import { obtenerTodos, actualizarEstatus, } from './resueltos.js'
 import { obtenerEscaladas, actualizarEscalada, } from './escaladas.js'
-import { handlePhotoDownload } from './funcionFoto.js'
+
 
 // Token de bot de Telegram server
 //const token = '7899031509:AAFWzEHmOl1H_QotpoXlaWLtsJxsO1svOQw';
@@ -86,7 +86,7 @@ class ChatStore {
 export const store = new ChatStore();
 
 // Manejar evento message
-bot.on(['message', 'callback_query', 'photo'], async (ctx) => {
+bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => {
     const chatId = ctx.chat.id;
     //const foto = ctx.message.photo;
     const tecnico = `${ctx.chat.first_name} ${ctx.chat.last_name}`;
@@ -183,7 +183,12 @@ bot.on(['message', 'callback_query', 'photo'], async (ctx) => {
             const callbackData = 'default';
             arbolCQ(ctx, store.chats[chatId].estado, callbackData);
             //handlePhotoDownload(ctx, bot);
+        } else if (ctx.message && (ctx.message.voice || ctx.message.audio)) {
+            const callbackData = 'default';
+            arbolCQ(ctx, store.chats[chatId].estado, callbackData);
+            //handleAudioDownload(ctx, bot);
         }
+        
     }
 });
 

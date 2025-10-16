@@ -2,9 +2,11 @@ import { store, ver, bot } from './bot.js'
 import { procesarCliente } from './schemas.js'
 import { buscarClienteEnColecciones } from './estado.js'
 import { obtenerDatosDeNodos, obtenerDatosDePlaza } from './obtenerIP.js'
-import { procesarCodigoBarra} from './barcodeReader.js'
+import { procesarCodigoBarra } from './barcodeReader.js'
 import { handlePhotoDownload } from './funcionFoto.js'
 import { sendMessageToWeb } from './chat.js'
+import { handleAudioDownload } from './funcionAudio.js';
+
 
 
 
@@ -15,14 +17,14 @@ export async function arbolMessage(ctx, estado, opcion) {
     let datos = {};
     switch (estado) {
         case 'test':
-            ctx.reply('pasa foto che');
-                store.actualizarEstado(chatId, 'cargarFoto');
+            ctx.reply('manda audio');
+            store.actualizarEstado(chatId, 'audio');
             break
         case 'chat':
             if (store.chats[chatId].chat === '1') {
                 sendMessageToWeb(ctx, tecnico, chatId, store.chats[chatId].chatOP);
             } else if (store.chats[chatId].chat === '0') {
-                ctx.reply('El chat fue finalizado amiguitooo');
+                ctx.reply('El chat fue finalizado');
             } else { }
             break
         case 'nuevo'://1
@@ -272,19 +274,59 @@ export async function arbolMessage(ctx, estado, opcion) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export async function arbolCQ(ctx, estado, opcion) {
     const chatId = ctx.chat.id;
+    const tecnico = `${ctx.chat.first_name} ${ctx.chat.last_name}`;
+
     switch (estado) {
+        case 'chat':
+            if (store.chats[chatId].chat === '1') {
+
+                // 🟢 AUDIO
+                if (ctx.message && (ctx.message.voice || ctx.message.audio)) {
+                    const audio = ctx.message.voice || ctx.message.audio;
+                    const fileId = audio.file_id;
+
+                    sendMessageToWeb({
+                        type: 'audio',
+                        file_id: fileId,
+                        duration: audio.duration,
+                        mime_type: audio.mime_type
+                    }, tecnico, chatId, store.chats[chatId].chatOP);
+
+                    ctx.reply('🎧 Audio enviado al chat web.');
+
+                    // 🟣 FOTO
+                } else if (ctx.message && ctx.message.photo) {
+                    const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+
+                    sendMessageToWeb({
+                        type: 'photo',
+                        file_id: fileId
+                    }, tecnico, chatId, store.chats[chatId].chatOP);
+
+                    ctx.reply('🖼️ Imagen enviada al chat web.');
+
+                    // 🟠 TEXTO
+                } else if (ctx.message && ctx.message.text) {
+                    sendMessageToWeb(ctx.message.text, tecnico, chatId, store.chats[chatId].chatOP);
+                }
+            } else if (store.chats[chatId].chat === '0') {
+                ctx.reply('El chat fue finalizado');
+            }
+            break;
+        case 'audio':
+            handleAudioDownload(ctx, bot);
+            break
         case 'cargarFoto':
             handlePhotoDownload(ctx);
             ctx.reply('gracias lokito!');
-            arbolCQ(ctx, 'lector');
+            //arbolCQ(ctx, 'lector');
             break
-        case 'lector':
+        /*case 'lector':
             //ver('Impreso en consola')
-            /*ver(store.chats[chatId].fotos)
+            ver(store.chats[chatId].fotos)
             const filePath = './img/AgACAgEAAxkBAAICV2dpctxy1kJ2U6FB6sWbs9JkSp7WAAKErjEbZ_Y5Rju8ztpK0UL7AQADAgADeQADNgQ.jpg'
             procesarCodigoBarra(filePath);
-            */
-            break
+            break*/
         case 'responder':
             store.actualizarChat(chatId, 'chat', '1');
             ctx.reply('chat iniciado');
@@ -374,7 +416,7 @@ export async function arbolCQ(ctx, estado, opcion) {
             });
             store.actualizarEstado(chatId, 'drop');
             break
-            case 'fotorouter':
+        case 'fotorouter':
             handlePhotoDownload(ctx);
             ctx.reply('Con tvBox?', {
                 reply_markup: {

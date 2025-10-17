@@ -190,12 +190,12 @@ export async function arbolMessage(ctx, estado, opcion) {
         case 'datoAdicional':
             store.actualizarChat(chatId, 'datoAdicional', opcion);
             Object.keys(store.chats[chatId]).forEach(key => {
-                if (!['true', 'false', undefined, '',].includes(store.chats[chatId][key])) {
+                if (!['true', 'false', undefined, '', ].includes(store.chats[chatId][key])) {
                     datos[key] = store.chats[chatId][key];
                 }
             });
             ctx.reply(`Datos cargados por ${store.chats[chatId].tecnico}:\n\n${Object.entries(datos)
-                .filter(([k]) => !['chatId', 'tecnico', 'estado', 'maximoCupo', 'fotos'].includes(k))
+                .filter(([k]) => !['chatId', 'tecnico', 'estado', 'maximoCupo', 'fotos', 'chat'].includes(k))
                 .map(([k, v]) => `${k}: ${v}`)
                 .join('\n')}\n\n        desea finalizar? Si/No.
                 `);

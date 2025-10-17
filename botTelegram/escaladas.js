@@ -87,11 +87,11 @@ export const agregarDocumento = async () => {
 // Actualizar un documento
 export const actualizarEscalada = async (id) => {
     try {
-        const documento = await respuestas.findById(id);
-        console.log(documento)
+        const documento = await respuestasEs.findById(id);
+        //console.log(documento)
         if (documento) {
             if (documento.status === false) {
-                await respuestas.findByIdAndUpdate(id, {
+                await respuestasEs.findByIdAndUpdate(id, {
                     $set: { status: true },
                 });
                 console.log(`Documento ${id} actualizado`);

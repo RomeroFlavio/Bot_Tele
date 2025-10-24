@@ -22,6 +22,11 @@ const resolvedSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    resolved: {
+        ticket: { type: String, required: true, trim: true },
+        description: { type: String, required: true, trim: true },
+        date: { type: String, required: true, trim: true }
+    },
     status: {
         type: Boolean,
         required: true,
@@ -41,22 +46,23 @@ export const obtenerTodos = async () => {
     try {
         const documentos = await respuestasRes.find();
         if (documentos.length > 0) {
-            const datos = documentos.map((documento) => ({
-                chatId: documento.order.chatId,
-                tecnico: documento.order.tecnico,
-                numeroCliente: documento.order.numeroCliente,
-                tipoOrden: documento.order.tipoOrden,
-                msjOp: documento.description,
-                idObjeto: documento.id,
-                status: documento.status,
+            return documentos.map(doc => ({
+                order: doc.order,
+                chatId: doc.order.chatId,
+                tecnico: doc.order.tecnico,
+                numeroCliente: doc.order.numeroCliente,
+                tipoOrden: doc.order.tipoOrden,
+                resolved: doc.resolved,
+                ticket: doc.resolved.ticket,
+                description: doc.resolved.description,
+                idObjeto: doc._id,
+                status: doc.status,
             }));
-            return datos;
-        } else {
-            return []; // Retorna un arreglo vacío si no hay documentos
         }
+        return [];
     } catch (error) {
-        console.error(error);
-        return []; // Si ocurre un error, también retorna un arreglo vacío
+        console.error("Error al obtener todos los documentos:", error);
+        return [];
     }
 };
 // obtenerTodos();
@@ -93,20 +99,19 @@ export const agregarDocumento = async () => {
 export const actualizarEstatus = async (id) => {
     try {
         const documento = await respuestasRes.findById(id);
-        if (documento) {
-            if (documento.status === false) {
-                await respuestasRes.findByIdAndUpdate(id, {
-                    $set: { status: true },
-                });
-                console.log(`Documento ${id} actualizado`);
-            } else {
-                console.log(`Documento ${id} ya está actualizado`);
-            }
-        } else {
+        if (!documento) {
             console.log(`Documento ${id} no encontrado`);
+            return;
+        }
+
+        if (documento.status === false) {
+            await respuestasRes.findByIdAndUpdate(id, { $set: { "status": true } });
+            console.log(`Documento ${id} actualizado`);
+        } else {
+            console.log(`Documento ${id} ya está actualizado`);
         }
     } catch (error) {
-        console.error(error);
+        console.error(`Error al actualizar el documento ${id}:`, error);
     }
 };
 //actualizarEstatus();

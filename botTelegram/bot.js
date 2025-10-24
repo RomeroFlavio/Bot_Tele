@@ -207,7 +207,7 @@ setInterval(() => {
     obtenerTodos().then((resolución) => {
         resolución.forEach((datos) => {
             if (datos.status === false) {
-                bot.telegram.sendMessage(datos.chatId, `Orden cerrada con exito! \n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nTicket/banelco: ${ddatos.resolved.ticket}\n Resolucion: ${datos.resolved.msjOp} \n\n Hasta luego ${datos.tecnico}!`);
+                bot.telegram.sendMessage(datos.chatId, `Orden cerrada con exito! \n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nTicket/banelco: ${datos.resolved.ticket}\n Resolucion: ${datos.resolved.description} \n\n Hasta luego ${datos.tecnico}!`);
                 actualizarEstatus(datos.idObjeto);
             } else {
 
@@ -218,7 +218,6 @@ setInterval(() => {
     obtenerEscaladas().then((escalado) => {
         escalado.forEach((datos) => {
             if (datos.status === false) {
-                console.log("asi viene tu documento", datos)
                 bot.telegram.sendMessage(datos.chatId, `Orden escalada\n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nMotivo: ${datos.msjOp}\n\nHasta luego ${datos.tecnico}!`,
                     {
                         reply_markup: {

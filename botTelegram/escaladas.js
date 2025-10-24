@@ -1,32 +1,21 @@
 import mongoose from "mongoose";
 
 const resolvedSchema = new mongoose.Schema({
-    order: {
-        type: Object,
-        required: true,
-        trim: true
-    },
-    climb: {
-        type: Object,
-        required: true,
-        trim: true
-    },
-    date: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    descrip: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    status: {
-        type: Boolean,
-        required: true,
-        trim: true
-    }
-});
+    numeroCliente: { type: String, required: true, trim: true },
+    chatId: { type: String, required: true, trim: true },
+    tecnico: { type: String, required: true, trim: true },
+    tipoOrden: { type: String, required: true, trim: true },
+    macInstaladaSM: { type: String, trim: true },
+    macInstaladaRouter: { type: String, trim: true },
+    ipAp: { type: String, trim: true },
+    nodo: { type: String, trim: true },
+    datoAdicional: { type: String, trim: true },
+    costo: { type: String, trim: true },
+    agent: { type: String, trim: true },
+    fotos: { type: Array, default: [] },
+    climb: { type: Object, default: {} },
+    status: { type: Boolean, required: true, trim: true },
+}, { timestamps: true }); // incluye createdAt y updatedAt automáticos
 
 export const respuestasEs = mongoose.model('ordenesescaladas', resolvedSchema);
 
@@ -36,20 +25,21 @@ export const obtenerEscaladas = async () => {
         const documentos = await respuestasEs.find();
         if (documentos.length > 0) {
             const datos = documentos.map((documento) => ({
-                chatId: documento.order.chatId,
-                tecnico: documento.order.tecnico,
-                numeroCliente: documento.order.numeroCliente,
-                tipoOrden: documento.order.tipoOrden,
-                msjOp: documento.climb.description,
-                idObjeto: documento.id,
+                chatId: documento.chatId,               // ✅ ahora directo
+                tecnico: documento.tecnico,
+                numeroCliente: documento.numeroCliente,
+                tipoOrden: documento.tipoOrden,
+                msjOp: documento.climb?.description || "Sin descripción",
+                idObjeto: documento._id.toString(),
                 status: documento.status,
             }));
+
             return datos;
         } else {
             return []; // Retorna un arreglo vacío si no hay documentos
         }
     } catch (error) {
-        console.error(error);
+        console.error("Error en obtenerEscaladas:", error);
         return []; // Si ocurre un error, también retorna un arreglo vacío
     }
 };
@@ -127,3 +117,41 @@ export const ActualizacionAutomatica = async (funcion, intervalo = 60000) => {
 };
 //ActualizacionAutomatica(parametro a actualizar)
 //ejemplo: ActualizacionAutomatica(obtenerTodos, 30000); cada 30 segundos
+
+//Mover entre colecciones
+export const moverEscaladaAClientesPendientes = async (id) => {
+    try {
+      if (!id) throw new Error('Se requiere un id');
+  
+      const objectId = mongoose.Types.ObjectId.isValid(id)
+        ? new mongoose.Types.ObjectId(id)
+        : null;
+      if (!objectId) throw new Error('id inválido');
+  
+      // Buscar el documento en ordenesescaladas
+      const documento = await respuestasEs.findById(objectId).lean();
+      if (!documento) {
+        return { ok: false, error: 'Documento no encontrado' };
+      }
+  
+      // Cambiar el status a false antes de moverlo
+      documento.status = false;
+  
+      // Insertar el documento en la colección clientespendientes
+      const targetCollection = mongoose.connection.collection('clientespendientes');
+      const insertResult = await targetCollection.insertOne(documento);
+  
+      // Si se insertó correctamente, eliminar el original
+      if (insertResult.insertedId) {
+        await respuestasEs.findByIdAndDelete(objectId);
+        console.log(`✅ Documento ${id} movido a clientespendientes con status=false`);
+        return { ok: true, movedId: insertResult.insertedId };
+      } else {
+        return { ok: false, error: 'No se pudo insertar en clientespendientes' };
+      }
+    } catch (error) {
+      console.error('Error moverEscaladaAClientesPendientes:', error);
+      return { ok: false, error: error.message || error };
+    }
+  };
+  

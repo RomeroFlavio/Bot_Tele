@@ -58,7 +58,7 @@ export async function arbolMessage(ctx, estado, opcion) {
                             ],
                         },
                     });
-                    console.log(resultado.mensaje);  // Mostrar el mensaje sobre el resultado de la búsqueda
+                    //console.log(resultado.mensaje);  // Mostrar el mensaje sobre el resultado de la búsqueda
                 })
                 .catch((error) => {
                     console.error('Error en la búsqueda:', error);
@@ -502,7 +502,7 @@ export async function arbolCQ(ctx, estado, opcion) {
     }
 }
 
-//        console.log(store.chats[chatId].numeroCliente);
+//        (store.chats[chatId].numeroCliente);
 //        console.log(store.chats[chatId].tipoOrden);
 //        arbolCQ(ctx, 'mismosEquipos', 'true');
 //        ctx.deleteMessage(ctx.message.message_id - 1);

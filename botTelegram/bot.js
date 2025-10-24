@@ -2,7 +2,7 @@
 import { Telegraf } from 'telegraf';
 import { arbolMessage, arbolCQ, } from './arbol.js'
 import { obtenerTodos, actualizarEstatus, } from './resueltos.js'
-import { obtenerEscaladas, actualizarEscalada, } from './escaladas.js'
+import { obtenerEscaladas, actualizarEscalada, moverEscaladaAClientesPendientes,} from './escaladas.js'
 
 
 // Token de bot de Telegram server
@@ -90,6 +90,8 @@ bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => 
     const chatId = ctx.chat.id;
     //const foto = ctx.message.photo;
     const tecnico = `${ctx.chat.first_name} ${ctx.chat.last_name}`;
+    //const telefono = ctx.message.contact.phone_number;
+    console.log('aca tenes tu ctx papaaaaaaa', ctx.telegram.agent);
     store.actualizarChat(chatId, 'tecnico', tecnico);
     if (ctx.message && !store.chats[chatId] || ctx.callbackQuery && !store.chats[chatId]) {
         store.agregarChat(chatId, tecnico);
@@ -143,7 +145,7 @@ bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => 
             const parts = callbackData.split(':');
             const action = parts[0]; // 'responder'
             const agente = parts[1]; // El chatId
-            ver(action)
+            ver(`callnack ${callbackData}\nprimera parte ${action}\nsegunda parte ${agente}`)
             store.actualizarChat(chatId, 'chatOP', agente);
             // Código para manejar callback_query
             if (callbackData === 'nuevo' || callbackData === 'estado' || callbackData === 'test') {
@@ -162,6 +164,9 @@ bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => 
                         ],
                     },
                 });
+            } else if (action === 'requerimientoverificado') {
+                //ver(`Hola! ${agente}`)
+                moverEscaladaAClientesPendientes(agente)
             } else if (action === 'responder') {
                 arbolCQ(ctx, action, callbackData); //por aca entra el chat
             } else if (action === 'finalizarchat') {
@@ -202,7 +207,7 @@ setInterval(() => {
     obtenerTodos().then((resolución) => {
         resolución.forEach((datos) => {
             if (datos.status === false) {
-                bot.telegram.sendMessage(datos.chatId, `Orden cerrada con exito! \n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nTicket/banelco: ${datos.ticket}\n Resolucion: ${datos.msjOp} \n\n Hasta luego ${datos.tecnico}!`);
+                bot.telegram.sendMessage(datos.chatId, `Orden cerrada con exito! \n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nTicket/banelco: ${ddatos.resolved.ticket}\n Resolucion: ${datos.resolved.msjOp} \n\n Hasta luego ${datos.tecnico}!`);
                 actualizarEstatus(datos.idObjeto);
             } else {
 
@@ -213,10 +218,20 @@ setInterval(() => {
     obtenerEscaladas().then((escalado) => {
         escalado.forEach((datos) => {
             if (datos.status === false) {
-                bot.telegram.sendMessage(datos.chatId, `Orden escalada\n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nMotivo: ${datos.msjOp}\n\nHasta luego ${datos.tecnico}!`);
+                console.log("asi viene tu documento", datos)
+                bot.telegram.sendMessage(datos.chatId, `Orden escalada\n\nNúmero de cliente: ${datos.numeroCliente}\nTipo de orden: ${datos.tipoOrden}\nMotivo: ${datos.msjOp}\n\nHasta luego ${datos.tecnico}!`,
+                    {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: 'Tarea realizada', callback_data: `RequerimientoVerificado:${datos.idObjeto}` }, 
+                                ],
+                            ],
+                        },
+                    }
+                );
                 actualizarEscalada(datos.idObjeto);
             } else {
-
             }
         });
     });

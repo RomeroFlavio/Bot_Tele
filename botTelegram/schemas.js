@@ -2,10 +2,11 @@ import mongoose from 'mongoose';
 import { store } from './bot.js';
 
 // URI de conexión a MongoDB Atlas
-const uri = 'mongodb+srv://flaviosromero:T7sHNCMNH9G3n1j3@cluster0.vukod.mongodb.net/';
+//const uri = 'mongodb+srv://flaviosromero:T7sHNCMNH9G3n1j3@cluster0.vukod.mongodb.net/';
+//const uri = 'mongodb+srv://hfranco:loRbqEk5I1lQ4Bn6@hernanfranco96.fgepwef.mongodb.net/';
 
 // URI de conexión a BaseLocal
-//const uri = 'mongodb://10.10.128.181:27017/activaciones_api' //local
+const uri = 'mongodb://10.10.128.181:27017/activaciones_api_labs' //local_labs
 
 // Conectar con MongoDB utilizando Mongoose
 mongoose.connect(uri, {

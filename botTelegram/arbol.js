@@ -6,6 +6,7 @@ import { procesarCodigoBarra } from './barcodeReader.js'
 import { handlePhotoDownload } from './funcionFoto.js'
 import { sendMessageToWeb } from './chat.js'
 import { handleAudioDownload } from './funcionAudio.js';
+import {permitirUsuario, bloquearUsuario, estaPendiente, estaPermitido, estaBloqueado} from './funcionLista.js';
 
 
 
@@ -13,8 +14,8 @@ import { handleAudioDownload } from './funcionAudio.js';
 export async function arbolMessage(ctx, estado, opcion) {
     const chatId = ctx.chat.id;
     const tecnico = `${ctx.chat.first_name} ${ctx.chat.last_name}`;
-
     let datos = {};
+
     switch (estado) {
         case 'test':
             ctx.reply('manda audio');
@@ -190,7 +191,7 @@ export async function arbolMessage(ctx, estado, opcion) {
         case 'datoAdicional':
             store.actualizarChat(chatId, 'datoAdicional', opcion);
             Object.keys(store.chats[chatId]).forEach(key => {
-                if (!['true', 'false', undefined, '', ].includes(store.chats[chatId][key])) {
+                if (!['true', 'false', undefined, '',].includes(store.chats[chatId][key])) {
                     datos[key] = store.chats[chatId][key];
                 }
             });
@@ -471,6 +472,29 @@ export async function arbolCQ(ctx, estado, opcion) {
             store.actualizarChat(chatId, 'costo', opcion);
             ctx.reply('(en un solo mensaje), Ingrese dato relevante adicional.\nEJ: trabajo realizado, observacion de equipo, material usado extra, etc');
             store.actualizarEstado(chatId, 'datoAdicional');
+            break
+        case 'user':
+            const callbackData = ctx.callbackQuery.data.toLowerCase();
+            const parts = callbackData.split('_');
+            const accion = parts[0]; // 'responder'
+            const userid = parseInt(parts[1]); // El chatId
+            const user = parts[2];// El nombre
+            store.actualizarChat(chatId, 'accion', accion);
+            if (store.chats[chatId].accion === 'permitir') {
+                if (estaPendiente(userid) && !estaPermitido(chatId)) {
+                    permitirUsuario(userid);
+                    ctx.reply(`✅ Usuario ${user} (${userid}) movido a PERMITIDOS.`);
+                } else {
+                    ctx.reply(`Usuario ${user} (${userid}) ya fue movido.`);
+                }
+            } else if (store.chats[chatId].accion === 'bloquear') {
+                if (estaPendiente(userid) && !estaBloqueado(chatId)) {
+                    bloquearUsuario(userid);
+                    ctx.reply(`🚫 Usuario ${user} (${userid}) movido a BLOQUEADOS.`);
+                } else {
+                    ctx.reply(`Usuario ${user} (${userid}) ya fue movido.`);
+                }
+            }
             break
         case 'salir':
             store.vaciarChat(chatId)

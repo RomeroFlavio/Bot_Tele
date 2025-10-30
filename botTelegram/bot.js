@@ -2,7 +2,8 @@
 import { Telegraf } from 'telegraf';
 import { arbolMessage, arbolCQ, } from './arbol.js'
 import { obtenerTodos, actualizarEstatus, } from './resueltos.js'
-import { obtenerEscaladas, actualizarEscalada, moverEscaladaAClientesPendientes,} from './escaladas.js'
+import { obtenerEscaladas, actualizarEscalada, moverEscaladaAClientesPendientes, } from './escaladas.js'
+import { estaPermitido, adm, estaPendiente, manejarUsuarios, estaBloqueado, } from './funcionLista.js';
 
 
 // Token de bot de Telegram server
@@ -88,114 +89,122 @@ export const store = new ChatStore();
 // Manejar evento message
 bot.on(['message', 'callback_query', 'photo', 'voice', 'audio'], async (ctx) => {
     const chatId = ctx.chat.id;
-    //const foto = ctx.message.photo;
     const tecnico = `${ctx.chat.first_name} ${ctx.chat.last_name}`;
-    //const telefono = ctx.message.contact.phone_number;
-    console.log('aca tenes tu ctx papaaaaaaa', ctx.telegram.agent);
-    store.actualizarChat(chatId, 'tecnico', tecnico);
-    if (ctx.message && !store.chats[chatId] || ctx.callbackQuery && !store.chats[chatId]) {
-        store.agregarChat(chatId, tecnico);
-        store.vaciarChat(chatId);
-        ctx.reply(`¡Hola, ${tecnico}!\nRegistrado correctamente ingrese:`, {
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        { text: 'Nuevo', callback_data: 'nuevo' },
-                        { text: 'Estado', callback_data: 'estado' },
-                        { text: 'Salir', callback_data: 'salir' },
-                        { text: 'Test', callback_data: 'test' },
-                        { text: 'Finalizar chat', callback_data: 'finalizar chat' },
+
+    if (estaPermitido(chatId) || adm(chatId)) {
+        store.actualizarChat(chatId, 'tecnico', tecnico);
+        if (ctx.message && !store.chats[chatId] || ctx.callbackQuery && !store.chats[chatId]) {
+            store.agregarChat(chatId, tecnico);
+            store.vaciarChat(chatId);
+            ctx.reply(`¡Hola, ${tecnico}!\nRegistrado correctamente ingrese:`, {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: 'Nuevo', callback_data: 'nuevo' },
+                            { text: 'Estado', callback_data: 'estado' },
+                            { text: 'Salir', callback_data: 'salir' },
+                            { text: 'Test', callback_data: 'test' },
+                            { text: 'Finalizar chat', callback_data: 'finalizar chat' },
+                        ],
                     ],
-                ],
-            },
-        })
-    } else {
-        // Manejar mensaje
-        if (ctx.message && ctx.message.text) {
-            const texto = ctx.message.text.toLowerCase();
-            // Código para manejar message
-            if (texto === 'nuevo' || texto === 'estado') {
-                store.actualizarChat(chatId, 'estado', texto);
-                arbolMessage(ctx, texto);
-            } else if (texto === 'salir') {
-                store.vaciarChat(chatId)
-                ctx.reply('Operación cancelada, ¡Hasta luego!', {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: 'Nuevo', callback_data: 'nuevo' },
-                                { text: 'Estado', callback_data: 'estado' },
-                                { text: 'Salir', callback_data: 'salir' },
-                                { text: 'Test', callback_data: 'test' },
-                                { text: 'Finalizar chat', callback_data: 'finalizar chat' },
+                },
+            })
+        } else {
+            // Manejar mensaje
+            if (ctx.message && ctx.message.text) {
+                const texto = ctx.message.text.toLowerCase();
+                // Código para manejar message
+                if (texto === 'nuevo' || texto === 'estado') {
+                    store.actualizarChat(chatId, 'estado', texto);
+                    arbolMessage(ctx, texto);
+                } else if (texto === 'salir') {
+                    store.vaciarChat(chatId)
+                    ctx.reply('Operación cancelada, ¡Hasta luego!', {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: 'Nuevo', callback_data: 'nuevo' },
+                                    { text: 'Estado', callback_data: 'estado' },
+                                    { text: 'Salir', callback_data: 'salir' },
+                                    { text: 'Test', callback_data: 'test' },
+                                    { text: 'Finalizar chat', callback_data: 'finalizar chat' },
+                                ],
                             ],
-                        ],
-                    },
-                });
-            } else if (texto === 'created') {
-                ctx.reply('© Powered by Hernan & Flavio.');
-            } else if (store.chats[chatId].chat === '1') {
-                arbolMessage(ctx, 'chat', texto);
-            } else {
-                arbolMessage(ctx, store.chats[chatId].estado, texto);
-            }
-            // Manejar callback_query
-        } else if (ctx.callbackQuery) {
-            const callbackData = ctx.callbackQuery.data.toLowerCase();
-            const parts = callbackData.split(':');
-            const action = parts[0]; // 'responder'
-            const agente = parts[1]; // El chatId
-            ver(`callnack ${callbackData}\nprimera parte ${action}\nsegunda parte ${agente}`)
-            store.actualizarChat(chatId, 'chatOP', agente);
-            // Código para manejar callback_query
-            if (callbackData === 'nuevo' || callbackData === 'estado' || callbackData === 'test') {
-                store.actualizarChat(chatId, 'estado', callbackData);
-                arbolMessage(ctx, callbackData);
-            } else if (callbackData === 'salir') {
-                store.vaciarChat(chatId);
-                ctx.reply('Operación cancelada, ¡Hasta luego!', {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: 'Nuevo', callback_data: 'nuevo' },
-                                { text: 'Estado', callback_data: 'estado' },
-                                { text: 'Salir', callback_data: 'salir' },
+                        },
+                    });
+                } else if (texto === 'created') {
+                    ctx.reply('© Powered by Hernan & Flavio.');
+                } else if (store.chats[chatId].chat === '1') {
+                    arbolMessage(ctx, 'chat', texto);
+                } else {
+                    arbolMessage(ctx, store.chats[chatId].estado, texto);
+                }
+                // Manejar callback_query
+            } else if (ctx.callbackQuery) {
+                const callbackData = ctx.callbackQuery.data.toLowerCase();
+                const parts = callbackData.split(':');
+                const action = parts[0]; // 'responder'
+                const agente = parts[1]; // El chatId
+                //ver(`callnack ${callbackData}\nprimera parte ${action}\nsegunda parte ${agente}`)
+                store.actualizarChat(chatId, 'chatOP', agente);
+                // Código para manejar callback_query
+                if (callbackData === 'nuevo' || callbackData === 'estado' || callbackData === 'test') {
+                    store.actualizarChat(chatId, 'estado', callbackData);
+                    arbolMessage(ctx, callbackData);
+                } else if (callbackData === 'salir') {
+                    store.vaciarChat(chatId);
+                    ctx.reply('Operación cancelada, ¡Hasta luego!', {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: 'Nuevo', callback_data: 'nuevo' },
+                                    { text: 'Estado', callback_data: 'estado' },
+                                    { text: 'Salir', callback_data: 'salir' },
+                                ],
                             ],
-                        ],
-                    },
-                });
-            } else if (action === 'requerimientoverificado') {
-                //ver(`Hola! ${agente}`)
-                moverEscaladaAClientesPendientes(agente)
-            } else if (action === 'responder') {
-                arbolCQ(ctx, action, callbackData); //por aca entra el chat
-            } else if (action === 'finalizarchat') {
-                store.actualizarChat(chatId, 'chat', '0');
-                ctx.reply('El chat fue finalizado', {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: 'Nuevo', callback_data: 'nuevo' },
-                                { text: 'Estado', callback_data: 'estado' },
-                                { text: 'Salir', callback_data: 'salir' },
+                        },
+                    });
+                } else if (action === 'requerimientoverificado') {
+                    //ver(`Hola! ${agente}`)
+                    moverEscaladaAClientesPendientes(agente)
+                } else if (action === 'responder') {
+                    arbolCQ(ctx, action, callbackData); //por aca entra el chat
+                } else if (action === 'finalizarchat') {
+                    store.actualizarChat(chatId, 'chat', '0');
+                    ctx.reply('El chat fue finalizado', {
+                        reply_markup: {
+                            inline_keyboard: [
+                                [
+                                    { text: 'Nuevo', callback_data: 'nuevo' },
+                                    { text: 'Estado', callback_data: 'estado' },
+                                    { text: 'Salir', callback_data: 'salir' },
+                                ],
                             ],
-                        ],
-                    },
-                });
-                store.actualizarEstado(chatId, '');
-            } else {
+                        },
+                    });
+                    store.actualizarEstado(chatId, '');
+                } else {
+                    arbolCQ(ctx, store.chats[chatId].estado, callbackData);
+                }
+            } else if (ctx.message && ctx.message.photo) { //PASAR IMAGEN
+                const callbackData = 'default';
                 arbolCQ(ctx, store.chats[chatId].estado, callbackData);
+                //handlePhotoDownload(ctx, bot);
+            } else if (ctx.message && (ctx.message.voice || ctx.message.audio)) {
+                const callbackData = 'default';
+                arbolCQ(ctx, store.chats[chatId].estado, callbackData);
+                //handleAudioDownload(ctx, bot);
             }
-        } else if (ctx.message && ctx.message.photo) { //PASAR IMAGEN
-            const callbackData = 'default';
-            arbolCQ(ctx, store.chats[chatId].estado, callbackData);
-            //handlePhotoDownload(ctx, bot);
-        } else if (ctx.message && (ctx.message.voice || ctx.message.audio)) {
-            const callbackData = 'default';
-            arbolCQ(ctx, store.chats[chatId].estado, callbackData);
-            //handleAudioDownload(ctx, bot);
+
         }
-        
+    } else if (!estaPermitido(chatId) && !estaBloqueado(chatId)) {
+        if (!estaPendiente(chatId)) {
+            manejarUsuarios(ctx, bot,);
+        } else if (estaPendiente(chatId)) {
+            bot.telegram.sendMessage(chatId, `⏳ Solicitud pendiente.`);
+        }
+    } else if (estaBloqueado(chatId)) {
+        bot.telegram.sendMessage(chatId, `❌ No autorizado ❌`);
     }
 });
 
@@ -223,7 +232,7 @@ setInterval(() => {
                         reply_markup: {
                             inline_keyboard: [
                                 [
-                                    { text: 'Tarea realizada', callback_data: `RequerimientoVerificado:${datos.idObjeto}` }, 
+                                    { text: 'Tarea realizada', callback_data: `RequerimientoVerificado:${datos.idObjeto}` },
                                 ],
                             ],
                         },
